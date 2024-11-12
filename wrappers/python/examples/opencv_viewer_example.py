@@ -9,6 +9,48 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 
+
+## Find out resolution first
+import pyrealsense2 as rs
+
+def get_camera_stream_resolutions():
+    # Initialize the pipeline and start streaming
+    pipeline = rs.pipeline()
+    config = rs.config()
+    pipeline_profile = pipeline.start(config)
+    
+    # Dictionary to store resolutions
+    resolutions = {}
+
+    # Get the active streams and their resolutions
+    for sensor in pipeline_profile.get_device().sensors:
+        for stream_profile in sensor.profiles:
+            video_profile = stream_profile.as_video_stream_profile()
+            if video_profile:
+                stream_type = str(stream_profile.stream_type())
+                width = video_profile.width()
+                height = video_profile.height()
+                fps = video_profile.fps()
+                
+                # Store resolution details in the dictionary
+                resolutions[stream_type] = {
+                    'width': width,
+                    'height': height,
+                    'fps': fps
+                }
+
+    # Stop the pipeline when done
+    pipeline.stop()
+    
+    return resolutions
+
+# Example usage
+# {'stream.confidence': {'width': 320, 'height': 240, 'fps': 30}, 'stream.infrared': {'width': 320, 'height': 240, 'fps': 30}, 'stream.depth': {'width': 320, 'height': 240, 'fps': 30}, 'stream.color': {'width': 640, 'height': 360, 'fps': 6}}
+resolutions = get_camera_stream_resolutions()
+print(resolutions)
+
+
+
 # Configure depth and color streams
 pipeline = rs.pipeline()
 config = rs.config()
@@ -28,8 +70,8 @@ if not found_rgb:
     print("The demo requires Depth camera with Color sensor")
     exit(0)
 
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+config.enable_stream(rs.stream.depth, resolutions['stream.depth']['width'], resolutions['stream.depth']['height'], rs.format.z16, 30)
+config.enable_stream(rs.stream.color, resolutions['stream.color']['width'], resolutions['stream.color']['height'], rs.format.bgr8, 30)
 
 # Start streaming
 pipeline.start(config)
